@@ -1,0 +1,1 @@
+Green 100 was built like in the TV series The Punisher when the loader finishes and reaches 100% all animations stop and the yellow circle changes coloro to green while the half white circle becomes full circle and changes color to green.
