@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Phone Hacking Loader — UI Simulation</title>
+<style>
+  :root{
+    --bg:#070a0d;
+    --panel:#15191e;
+    --panel2:#101419;
+    --grid:rgba(91,116,130,.16);
+    --line:#263038;
+    --cyan:#6fc8c2;
+    --cyan-dim:rgba(111,200,194,.28);
+    --yellow:#ffe600;
+    --yellow-dim:rgba(255,230,0,.16);
+    --white:#f2f4f1;
+    --muted:#879197;
+    --green:#9fbf54;
+  }
+
+  *{box-sizing:border-box}
+
+  html,body{
+    width:100%;
+    height:100%;
+    margin:0;
+    overflow:hidden;
+    background:#050709;
+    font-family:"Courier New",Consolas,monospace;
+    color:#c8ced1;
+  }
+
+  body{
+    display:grid;
+    place-items:center;
+    background:
+      radial-gradient(circle at 38% 50%,rgba(30,39,44,.26),transparent 38%),
+      linear-gradient(115deg,#050709,#0b0e12 48%,#07090b);
+  }
+
+  .screen{
+    position:relative;
+    width:min(1450px,96vw);
+    height:min(820px,94vh);
+    overflow:hidden;
+    border:1px solid #30373c;
+    background:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+      #0b0e12;
+    background-size:18px 18px;
+    box-shadow:0 0 70px rgba(0,0,0,.8), inset 0 0 80px rgba(0,0,0,.55);
+  }
+
+  .screen::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:
+      repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 4px),
+      radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.52) 100%);
+    mix-blend-mode:screen;
+    opacity:.55;
+    z-index:20;
+  }
+
+  .topbar{
+    height:34px;
+    display:flex;
+    align-items:center;
+    padding:0 14px;
+    border-bottom:1px solid #252d32;
+    background:rgba(8,11,14,.92);
+    color:#747e83;
+    font-size:12px;
+    letter-spacing:1px;
+  }
+
+  .topbar .status{
+    color:var(--yellow);
+    text-shadow:0 0 9px rgba(255,230,0,.45);
+  }
+
+  .layout{
+    position:absolute;
+    inset:34px 0 0;
+    display:grid;
+    grid-template-columns:52% 48%;
+  }
+
+  .loader-side{
+    position:relative;
+    display:grid;
+    place-items:center;
+    border-right:1px solid #242c31;
+  }
+
+  .loader-wrap{
+    position:relative;
+    width:min(570px,42vw);
+    aspect-ratio:1;
+    display:grid;
+    place-items:center;
+  }
+
+  /* Outer technical rings */
+  .ring{
+    position:absolute;
+    border-radius:50%;
+    pointer-events:none;
+  }
+
+  .ring.outer{
+    inset:0;
+    border:2px solid rgba(111,200,194,.5);
+    box-shadow:
+      0 0 0 5px rgba(111,200,194,.04),
+      0 0 16px rgba(111,200,194,.12);
+  }
+
+  .ring.outer::before,
+  .ring.outer::after{
+    content:"";
+    position:absolute;
+    inset:9px;
+    border-radius:50%;
+    border:1px dashed rgba(111,200,194,.22);
+  }
+
+  .ring.outer::after{
+    inset:16px;
+    border:1px solid rgba(255,255,255,.08);
+  }
+
+  .ring.track{
+    inset:8%;
+    border:13px solid rgba(40,46,51,.95);
+    box-shadow:inset 0 0 13px #000, 0 0 4px #000;
+  }
+
+  .ring.yellow{
+    display:none;
+    inset:8%;
+    border:13px solid transparent;
+    border-top-color:var(--yellow);
+    border-right-color:var(--yellow);
+    transform:rotate(-42deg);
+    filter:drop-shadow(0 0 5px rgba(255,230,0,.38));
+    transition:transform .12s linear;
+  }
+
+  .ring.inner-track{
+    inset:18%;
+    border:2px solid #31383d;
+    box-shadow:inset 0 0 20px rgba(0,0,0,.7);
+  }
+
+  .ring.inner-highlight{
+    inset:19.2%;
+    border:1px solid rgba(255,255,255,.07);
+  }
+
+  /* The bright white rotating "scanner" */
+  .scanner{
+    display:none;
+    position:absolute;
+    inset:5.5%;
+    border-radius:50%;
+    animation:spin 2.4s linear infinite;
+    pointer-events:none;
+  }
+
+  .scanner::before,
+  .scanner::after{
+    content:"";
+    position:absolute;
+    width:24%;
+    height:7%;
+    top:-1.2%;
+    left:11%;
+    border-radius:999px;
+    background:var(--white);
+    box-shadow:
+      0 0 8px rgba(255,255,255,.85),
+      0 0 20px rgba(255,255,255,.45);
+    transform:rotate(26deg);
+  }
+
+  .scanner::after{
+    top:auto;
+    left:auto;
+    right:4%;
+    bottom:18%;
+    width:21%;
+    transform:rotate(-58deg);
+  }
+
+  .scanner-speed{
+    animation-duration:var(--speed,2.4s);
+  }
+
+  @keyframes spin{
+    to{transform:rotate(360deg)}
+  }
+
+  /* Yellow tick markers */
+  .ticks{
+    display:none;
+    position:absolute;
+    inset:2.5%;
+    border-radius:50%;
+    animation:spinReverse 9s linear infinite;
+  }
+
+  .ticks::before{
+    content:"";
+    position:absolute;
+    width:13px;
+    height:28px;
+    top:0;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--yellow);
+    box-shadow:0 0 10px rgba(255,230,0,.35);
+  }
+
+  @keyframes spinReverse{
+    to{transform:rotate(-360deg)}
+  }
+
+  .hud-arcs{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    overflow:visible;
+    pointer-events:none;
+  }
+
+  .yellow-track{
+    fill:none;
+    stroke:#252b30;
+    stroke-width:2.2;
+    opacity:.95;
+  }
+
+  .yellow-progress{
+    fill:none;
+    stroke:var(--yellow);
+    stroke-width:3.2;
+    stroke-linecap:butt;
+    stroke-dasharray:213.628;
+    stroke-dashoffset:211.492;
+    transform:rotate(-90deg);
+    transform-origin:50% 50%;
+    filter:drop-shadow(0 0 3px rgba(255,230,0,.48));
+    transition:stroke 0.3s ease, filter 0.3s ease;
+  }
+
+  .yellow-progress.complete{
+    stroke:var(--green);
+    filter:drop-shadow(0 0 3px rgba(159,191,84,.48));
+  }
+
+  .white-half{
+    fill:none;
+    stroke:var(--white);
+    stroke-width:2.7;
+    stroke-linecap:round;
+    filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 12px rgba(255,255,255,.3));
+    transform-origin:50% 50%;
+    animation:whiteOrbit 2.5s linear infinite;
+    transition:stroke 0.3s ease, filter 0.3s ease;
+  }
+
+  .white-half.complete{
+    display:none;
+  }
+
+  .white-full{
+    fill:none;
+    stroke:var(--white);
+    stroke-width:2.7;
+    stroke-linecap:round;
+    filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 12px rgba(255,255,255,.3));
+    display:none;
+    transition:stroke 0.3s ease, filter 0.3s ease;
+  }
+
+  .white-full.complete{
+    display:block;
+    stroke:var(--green);
+    filter:drop-shadow(0 0 5px rgba(159,191,84,.9)) drop-shadow(0 0 12px rgba(159,191,84,.3));
+  }
+
+  @keyframes whiteOrbit{
+    to{transform:rotate(360deg)}
+  }
+
+  .core{
+    position:absolute;
+    position:absolute;
+    inset:24%;
+    display:grid;
+    place-items:center;
+    text-align:center;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 50% 42%,#262b30 0,#181d22 48%,#101419 100%);
+    box-shadow:
+      inset 0 0 25px rgba(0,0,0,.8),
+      0 0 15px rgba(0,0,0,.5);
+    border:1px solid #333a3f;
+  }
+
+  .percentage{
+    color:var(--yellow);
+    font-family:"Arial Narrow",Arial,sans-serif;
+    font-size:clamp(48px,6vw,82px);
+    line-height:.9;
+    font-weight:500;
+    text-shadow:0 0 14px rgba(255,230,0,.2);
+  }
+
+  .progress-label{
+    margin-top:18px;
+    color:var(--yellow);
+    font-family:Arial,sans-serif;
+    font-size:clamp(18px,1.6vw,28px);
+    font-weight:700;
+    letter-spacing:-.5px;
+  }
+
+  .substatus{
+    margin-top:14px;
+    color:#697379;
+    font-size:10px;
+    letter-spacing:1.5px;
+  }
+
+  .corner{
+    position:absolute;
+    color:#546168;
+    font-size:9px;
+    letter-spacing:1px;
+  }
+  .corner.tl{top:18px;left:18px}
+  .corner.tr{top:18px;right:18px;text-align:right}
+  .corner.bl{bottom:18px;left:18px}
+  .corner.br{bottom:18px;right:18px;text-align:right}
+
+  /* Right terminal panel */
+  .terminal{
+    position:relative;
+    margin:25px 26px 28px 0;
+    background:
+      linear-gradient(90deg,rgba(255,255,255,.018),transparent 20%),
+      rgba(19,23,28,.93);
+    border:1px solid #353d42;
+    box-shadow:inset 0 0 50px rgba(0,0,0,.28);
+    overflow:hidden;
+  }
+
+  .terminal-head{
+    height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 15px;
+    border-bottom:1px solid #31383d;
+    color:#879196;
+    font-size:11px;
+    letter-spacing:1px;
+  }
+
+  .dots{
+    display:flex;
+    gap:5px;
+  }
+  .dots i{
+    width:6px;height:6px;border-radius:50%;
+    display:block;background:#556068;
+  }
+
+  .terminal-body{
+    position:absolute;
+    inset:42px 0 0;
+    padding:18px 20px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    font-size:11px;
+    line-height:1.55;
+    color:#7f8a90;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+
+  .terminal-body::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:url('terminallogo.png');
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    background-attachment:center;
+        opacity:0.15;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .terminal-body > *{
+    position:relative;
+    z-index:1;
+  }
+
+  .terminal-body .bright{color:#c1c8ca}
+  .terminal-body .yellow{color:var(--yellow)}
+  .terminal-body .cyan{color:var(--cyan)}
+  .terminal-body .green{color:var(--green)}
+
+  .cursor{
+    display:inline-block;
+    width:7px;
+    height:13px;
+    background:var(--yellow);
+    vertical-align:-2px;
+    animation:blink .8s steps(1) infinite;
+  }
+
+  @keyframes blink{50%{opacity:0}}
+
+  .controls{
+    position:absolute;
+    left:20px;
+    bottom:20px;
+    display:flex;
+    gap:8px;
+    z-index:30;
+  }
+
+  button{
+    border:1px solid #3a444a;
+    background:#11161a;
+    color:#899398;
+    font:10px "Courier New",monospace;
+    letter-spacing:1px;
+    padding:8px 11px;
+    cursor:pointer;
+  }
+
+  button:hover{
+    color:var(--yellow);
+    border-color:rgba(255,230,0,.55);
+  }
+
+  .hint{
+    position:absolute;
+    right:18px;
+    bottom:18px;
+    color:#465158;
+    font-size:9px;
+    letter-spacing:1px;
+  }
+
+  @media(max-width:900px){
+    body{overflow:auto}
+    .screen{height:100vh;width:100vw;border:0}
+    .layout{grid-template-columns:1fr}
+    .loader-side{min-height:58vh;border-right:0;border-bottom:1px solid #242c31}
+    .loader-wrap{width:min(78vw,480px)}
+    .terminal{margin:18px;height:36vh}
+  }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="topbar">
+    <span>DEVICE PAIRING:</span>&nbsp;
+    <span class="status" id="topStatus">ENCRYPTED LINK</span>
+    <span style="margin-left:auto">NODE // 07 &nbsp;|&nbsp; SECURE CHANNEL</span>
+  </div>
+
+  <div class="layout">
+    <section class="loader-side">
+      <div class="corner tl">AUTH / DEVICE ACCESS</div>
+      <div class="corner tr">LATENCY 004ms<br>PACKETS 08192</div>
+      <div class="corner bl">PROTOCOL: X-17</div>
+      <div class="corner br">SIGNAL: STABLE<br>MODE: SIMULATION</div>
+
+      <div class="loader-wrap">
+        <div class="ring outer"></div>
+        <div class="ring track"></div>
+        <div class="ring yellow" id="progressRing"></div>
+        <div class="ring inner-track"></div>
+        <div class="ring inner-highlight"></div>
+        <div class="scanner scanner-speed" id="scanner"></div>
+        <div class="ticks"></div>
+
+        <svg class="hud-arcs" viewBox="0 0 100 100" aria-hidden="true">
+          <!-- Inner yellow progress circle: 1% = tiny arc, 100% = full circle -->
+          <circle class="yellow-track" cx="50" cy="50" r="34" />
+          <circle class="yellow-progress" id="yellowProgress" cx="50" cy="50" r="34" />
+          <!-- White half-circle scanner, rotating independently around the yellow ring -->
+          <path class="white-half" d="M 8 50 A 42 42 0 0 1 92 50" />
+          <!-- White full circle shown when complete -->
+          <circle class="white-full" cx="50" cy="50" r="42" />
+        </svg>
+
+        <div class="core">
+          <div>
+            <div class="percentage" id="percentage">1%</div>
+            <div class="progress-label">PROGRESS</div>
+            <div class="substatus" id="substatus">INITIALIZING...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="restart">RESTART</button>
+        <button id="pause">PAUSE</button>
+        <button id="speed">SPEED ×1</button>
+      </div>
+    </section>
+
+    <section class="terminal">
+      <div class="terminal-head">
+        <div>REMOTE DEVICE INTERFACE</div>
+        <div class="dots"><i></i><i></i><i></i></div>
+      </div>
+      <div class="terminal-body" id="terminalBody"></div>
+      <div class="hint">FICTIONAL UI SIMULATION</div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  const percentage = document.getElementById("percentage");
+  const progressRing = document.getElementById("progressRing");
+  const substatus = document.getElementById("substatus");
+  const terminal = document.getElementById("terminalBody");
+  const topStatus = document.getElementById("topStatus");
+  const scanner = document.getElementById("scanner");
+  const yellowProgress = document.getElementById("yellowProgress");
+  const whiteHalf = document.querySelector(".white-half");
+  const whiteFull = document.querySelector(".white-full");
+
+  const phases = [
+    [0, "INITIALIZING..."],
+    [8, "LOCATING DEVICE..."],
+    [18, "NEGOTIATING SESSION..."],
+    [31, "VERIFYING HANDSHAKE..."],
+    [45, "MAPPING INTERFACE..."],
+    [59, "READING RESPONSE..."],
+    [72, "DECRYPTING SESSION..."],
+    [84, "SYNCING DATA..."],
+    [94, "FINALIZING..."],
+    [100, "ACCESS SEQUENCE COMPLETE"]
+  ];
+
+  const lines = [
+    ["cyan","$ device --scan --remote"],
+    ["bright","[+] target response received"],
+    ["green","[OK] channel established"],
+    ["",""],
+    ["cyan","$ session --negotiate --secure"],
+    ["","  endpoint     : REMOTE_NODE_07"],
+    ["","  transport    : ENCRYPTED"],
+    ["","  handshake    : VALID"],
+    ["","  packet mode  : BURST"],
+    ["",""],
+    ["yellow","[!] synchronizing response blocks..."],
+    ["",""],
+    ["cyan","$ interface --map"],
+    ["","  /system      .......... READY"],
+    ["","  /services    .......... READY"],
+    ["","  /session     .......... WAIT"],
+    ["","  /userdata    .......... WAIT"],
+    ["",""],
+    ["green","[+] telemetry nominal"],
+    ["","[+] signal lock maintained"],
+    ["",""],
+    ["cyan","$ process --watch"],
+    ["","  buffer       : 8192 KB"],
+    ["","  throughput   : 14.8 MB/s"],
+    ["","  integrity    : 100%"],
+    ["",""],
+    ["yellow","> awaiting loader completion"],
+  ];
+
+  const dummyHackerLines = [
+    "0x7f2e4a9c: MEMORY BUFFER OVERFLOW DETECTED",
+    ">> Packet loss: 0.2% | Latency: 12ms",
+    "[DECRYPT] AES-256 key rotation in progress...",
+    "malloc(0xffff8000) @ 0x555555558000 OK",
+    "TCP/IP handshake: SYN-ACK received",
+    "[!] Firewall rule bypassed - 0x4d48",
+    "free() called on unallocated memory zone",
+    "ERR_CONNECTION_RESET (code: 104)",
+    "[*] Bruteforce attempt: 847239/1000000",
+    "Kernel panic avoided (0xdeadbeef)",
+    "[+] Socket created: fd=42",
+    "ICMP flood detected from 192.168.1.254",
+    "Stack smashing detected: [=====>  ]",
+    "[WARN] Cache coherency failure",
+    ">> Uploading payload... 47% complete",
+    "[#] Process spawned: PID 8847",
+    "SIGSEGV at instruction 0x400c34",
+    "[*] Scanning network: 192.168.1.0/24",
+    "ROOT_PRIVILEGE escalation: SUCCESS",
+    ">> VPN tunnel established (10.0.0.1)",
+  ];
+
+  let lastDummyUpdate = 0;
+  let dummyLineIndex = 0;
+
+  function renderTerminal(p) {
+    const visible = Math.min(lines.length, Math.floor((p / 100) * lines.length) + 4);
+    let out = "";
+
+    // Add main progress lines
+    for (let i = 0; i < visible; i++) {
+      const [cls, text] = lines[i];
+      out += cls ? `<span class="${cls}">${escapeHtml(text)}</span>\n`
+                 : `${escapeHtml(text)}\n`;
+    }
+
+    // Fill terminal with continuously updating dummy hacker text
+    const linesToShow = Math.max(8, Math.floor(Math.random() * 15));
+    for (let i = 0; i < linesToShow; i++) {
+      const idx = (dummyLineIndex + i) % dummyHackerLines.length;
+      out += `<span class="cyan">${escapeHtml(dummyHackerLines[idx])}</span>\n`;
+    }
+
+    if (p < 100) out += `<span class="cursor"></span>`;
+    else out += `<span class="green">[OK] PROCESS COMPLETE</span>`;
+
+    terminal.innerHTML = out;
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, ch => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[ch]));
+  }
+
+  let progress = 1;
+  let running = true;
+  let speedLevel = 1;
+  let last = performance.now();
+
+  function phaseFor(p) {
+    let result = phases[0][1];
+    for (const [threshold, label] of phases) {
+      if (p >= threshold) result = label;
+    }
+    return result;
+  }
+
+  function updateVisuals() {
+    percentage.textContent = `${Math.floor(progress)}%`;
+
+    // Exact circular progress: 1% is only the beginning of the ring; 100% is complete.
+    const circumference = 2 * Math.PI * 34;
+    const offset = circumference * (1 - progress / 100);
+    yellowProgress.style.strokeDasharray = circumference;
+    yellowProgress.style.strokeDashoffset = offset;
+
+    substatus.textContent = phaseFor(progress);
+
+    if (progress >= 100) {
+      topStatus.textContent = "LINK COMPLETE";
+      topStatus.style.color = "#9fbf54";
+      // Add complete class to both circles
+      yellowProgress.classList.add("complete");
+      whiteHalf.classList.add("complete");
+      whiteFull.classList.add("complete");
+    } else {
+      topStatus.textContent = "ENCRYPTED LINK";
+      topStatus.style.color = "";
+      // Remove complete class if going back
+      yellowProgress.classList.remove("complete");
+      whiteHalf.classList.remove("complete");
+      whiteFull.classList.remove("complete");
+    }
+
+    renderTerminal(progress);
+  }
+
+  function animate(now) {
+    const dt = (now - last) / 1000;
+    last = now;
+
+    if (running && progress < 100) {
+      // Smooth but slightly irregular, cinematic progression - SLOWER
+      const base = 2.2 * speedLevel;
+      const pulse = 0.55 + Math.sin(now / 700) * 0.18;
+      progress += base * pulse * dt;
+      if (progress > 100) progress = 100;
+      updateVisuals();
+    }
+
+    // Rapidly cycle through dummy hacker lines for visual effect - MUCH FASTER
+    dummyLineIndex += 2;
+
+    requestAnimationFrame(animate);
+  }
+
+  document.getElementById("restart").addEventListener("click", () => {
+    progress = 1;
+    running = true;
+    updateVisuals();
+  });
+
+  document.getElementById("pause").addEventListener("click", (e) => {
+    running = !running;
+    e.currentTarget.textContent = running ? "PAUSE" : "RESUME";
+  });
+
+  document.getElementById("speed").addEventListener("click", (e) => {
+    speedLevel = speedLevel === 1 ? 2 : speedLevel === 2 ? 4 : 1;
+    e.currentTarget.textContent = `SPEED ×${speedLevel}`;
+    document.querySelector(".white-half").style.animationDuration = speedLevel === 1 ? "2.5s" : speedLevel === 2 ? "1.4s" : ".75s";
+  });
+
+  updateVisuals();
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
